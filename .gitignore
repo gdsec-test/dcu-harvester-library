@@ -1,0 +1,10 @@
+__pycache__
+coverage.xml
+.coverage
+.venv
+.noseids
+.idea/*
+.vscode/*
+.envrc
+*.png
+*.ipynb

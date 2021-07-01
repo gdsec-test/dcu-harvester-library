@@ -10,7 +10,9 @@ from harvester import CountryCode, HarvesterAsyncClient
 auth = 'example'
 file_auth = 'example'
 bucket_id = 'example'
-client = HarvesterAsyncClient(auth, file_auth, bucket_id, 'https://extapi.authentic8.com/')
+# The '/dev-downloads' here is just an example. This needs to match with a path that you have created in your
+# Silo buckets.
+client = HarvesterAsyncClient(auth, file_auth, bucket_id, '/dev-downloads', 'https://extapi.authentic8.com/')
 taskId = await client.create_capture_task('https://godaddy.com', CountryCode.US)
 
 await asyncio.sleep(45) # Tasks are async, so give it some time to finish.
