@@ -1,3 +1,4 @@
+import asyncio
 from enum import Enum
 from io import BytesIO
 from zipfile import ZipFile
@@ -159,6 +160,7 @@ class HarvesterAsyncClient(object):
             self.KEY_AUTH: self._storage_token
         }
         response = requests.post(url=self._getfile_url, data=params)
+        response.raise_for_status()
         return response.content
 
     def delete_file(self, file_id: str) -> str:
