@@ -1,8 +1,7 @@
 from enum import Enum
 from io import BytesIO
 from zipfile import ZipFile
-
-import aiohttp
+import requests
 
 
 class CountryCode(Enum):
@@ -71,27 +70,26 @@ class HarvesterAsyncClient(object):
         self._api_url = f'{url}/api/'
         self._getfile_url = f'{url}/getfile/'
 
-    async def __run_api_command(self, command: dict, token: str) -> list:
+    def __run_api_command(self, command: dict, token: str) -> list:
         """
         Internal member class to execute API commands against Authentic8
         Harvester.
         """
-        async with aiohttp.ClientSession() as session:
-            data = [
-                {
-                    self.KEY_COMMAND: self.SET_AUTH_COMMAND,
-                    self.KEY_DATA: token
-                },
-                command
-            ]
-            async with session.post(url=self._api_url, json=data) as response:
-                # return the second object, as the first will be the auth result.
-                data = await response.json()
-                if len(data) != 2:
-                    raise Exception(f'Did not receive two response objects for Harvester Task {data}')
-                return data[1]
+        data = [
+            {
+                self.KEY_COMMAND: self.SET_AUTH_COMMAND,
+                self.KEY_DATA: token
+            },
+            command
+        ]
+        response = requests.post(url=self._api_url, json=data)
+        # return the second object, as the first will be the auth result.
+        data = response.json()
+        if len(data) != 2:
+            raise Exception(f'Did not receive two response objects for Harvester Task {data}')
+        return data[1]
 
-    async def create_capture_task(self, url: str, proxy: CountryCode, image=True, html=True) -> str:
+    def create_capture_task(self, url: str, proxy: CountryCode, image=True, html=True) -> str:
         """
         Attempt to run a Harvester Authentic8 capture task against the
         supplied URL, via the specified proxy location. Optionally specify if
@@ -115,13 +113,13 @@ class HarvesterAsyncClient(object):
             cmd[self.KEY_TASK_PARAMS][self.KEY_VIS_PARAMS].append({self.KEY_NAME: self.IMAGE_OUTPUT})
         if html:
             cmd[self.KEY_TASK_PARAMS][self.KEY_VIS_PARAMS].append({self.KEY_NAME: self.MIME_HTML_OUTPUT})
-        result = await self.__run_api_command(cmd, self._api_token)
+        result = self.__run_api_command(cmd, self._api_token)
         result_dict = result.get(self.KEY_RESULT)
         if not result_dict or not result_dict.get(self.KEY_TASK_ID):
             raise Exception('Task ID not returned from Harvester task')
         return result_dict.get(self.KEY_TASK_ID)
 
-    async def get_tasks(self, finished=None) -> dict:
+    def get_tasks(self, finished=None) -> dict:
         """
         Retrieve all Harvester tasks, filtered by finished status if supplied.
         """
@@ -131,13 +129,13 @@ class HarvesterAsyncClient(object):
         if finished is not None:
             cmd[self.KEY_FINISHED] = finished
 
-        result = await self.__run_api_command(cmd, self._api_token)
+        result = self.__run_api_command(cmd, self._api_token)
         result_dict = result.get(self.KEY_RESULT)
         if not isinstance(result_dict, list):
             raise Exception('Malformed Harvester response when fetching all tasks')
         return result_dict
 
-    async def delete_task(self, task_id: str) -> dict:
+    def delete_task(self, task_id: str) -> dict:
         """
         Delete Harvester Authentic8 task by ID.
         """
@@ -145,26 +143,25 @@ class HarvesterAsyncClient(object):
             self.KEY_COMMAND: self.DELETE_TASK_COMMAND,
             self.KEY_TASK_ID: task_id
         }
-        result = await self.__run_api_command(cmd, self._api_token)
+        result = self.__run_api_command(cmd, self._api_token)
         result_dict = result.get(self.KEY_RESULT)
         if not result_dict or result_dict.get(self.KEY_DELETED) is None:
             raise Exception(f'Malformed Harvester response when deleting task {task_id}')
         return result_dict.get(self.KEY_DELETED) is True
 
-    async def download_file(self, file_id: str) -> bytes:
+    def download_file(self, file_id: str) -> bytes:
         """
         Requires the S3 file ID of the file stored in the Authentic8 permenant
         storage pool. Does not work with file path.
         """
-        async with aiohttp.ClientSession() as session:
-            params = {
-                self.KEY_ID: file_id,
-                self.KEY_AUTH: self._storage_token
-            }
-            async with session.post(url=self._getfile_url, data=params) as response:
-                return await response.read()
+        params = {
+            self.KEY_ID: file_id,
+            self.KEY_AUTH: self._storage_token
+        }
+        response = requests.post(url=self._getfile_url, data=params)
+        return response.content
 
-    async def delete_file(self, file_id: str) -> str:
+    def delete_file(self, file_id: str) -> str:
         """
         Requires the S3 file ID of the file stored in the Authentic8 permenant
         storage pool. Does not work with file path.
@@ -173,7 +170,7 @@ class HarvesterAsyncClient(object):
             self.KEY_COMMAND: self.DELETE_FILE_COMMAND,
             self.KEY_FILE_ID: file_id
         }
-        result = await self.__run_api_command(cmd, self._storage_token)
+        result = self.__run_api_command(cmd, self._storage_token)
         result_dict = result.get(self.KEY_RESULT)
         if not result_dict:
             raise Exception(f'Malformed Harvester response when deleting file {file_id}')
