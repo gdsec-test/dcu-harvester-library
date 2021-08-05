@@ -1,8 +1,10 @@
 import zipfile
 from io import BytesIO
 from unittest import TestCase
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
 from requests import Response
+
 from harvester import CountryCode, HarvesterAsyncClient
 
 
