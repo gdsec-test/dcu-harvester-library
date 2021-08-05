@@ -4,7 +4,6 @@ Python library to allow different DCU applications to dispatch/monitor/and retri
 
 ## Example
 ```py
-import asyncio
 from harvester import CountryCode, HarvesterAsyncClient
 
 auth = 'example'
