@@ -20,7 +20,7 @@ for task in finished_tasks:
         taskId = task['task_id']
         if task['status'] == 'done':
             fileId = task['result_file_id']
-            data = await client.download_file(fileId)
+            data = client.download_file(fileId)
             image = client.image_from_zip(data)
             with open('test.png', 'wb') as f:
                 f.write(image)
