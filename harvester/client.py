@@ -120,7 +120,7 @@ class HarvesterAsyncClient(object):
             raise Exception('Task ID not returned from Harvester task')
         return result_dict.get(self.KEY_TASK_ID)
 
-    def get_tasks(self, finished=None) -> dict:
+    def get_tasks(self, finished: bool) -> list:
         """
         Retrieve all Harvester tasks, filtered by finished status if supplied.
         """
