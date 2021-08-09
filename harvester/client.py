@@ -71,7 +71,7 @@ class HarvesterAsyncClient(object):
         self._api_url = f'{url}/api/'
         self._getfile_url = f'{url}/getfile/'
 
-    def __run_api_command(self, command: dict, token: str) -> list[dict]:
+    def __run_api_command(self, command: dict, token: str) -> dict:
         """
         Internal member class to execute API commands against Authentic8
         Harvester.
