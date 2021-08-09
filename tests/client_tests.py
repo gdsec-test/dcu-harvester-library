@@ -1,7 +1,9 @@
 import zipfile
 from io import BytesIO
+from unittest import TestCase
+from unittest.mock import MagicMock, Mock, patch
 
-from asynctest import CoroutineMock, TestCase, patch
+from requests import Response
 
 from harvester import CountryCode, HarvesterAsyncClient
 
@@ -17,7 +19,7 @@ class TestHarvesterAsyncClient(TestCase):
     TEST_TASK = 'test task'
     KEY_URL = 'url'
     KEY_JSON = 'json'
-    TEST_DICT = {'test': '1'}
+    TEST_DICT = [{'test': '1'}]
 
     def setUp(self):
         self.client = HarvesterAsyncClient(
@@ -25,12 +27,12 @@ class TestHarvesterAsyncClient(TestCase):
         )
         self.bytes_zip = BytesIO()
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_create_capture_task_success(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_create_capture_task_success(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: {self.client.KEY_TASK_ID: self.TEST_TASK}}]
         ])
-        taskId = await self.client.create_capture_task(self.GODADDY_URL, CountryCode.US)
+        taskId = self.client.create_capture_task(self.GODADDY_URL, CountryCode.US)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
         self.assertEqual(mock_post.call_args[1][self.KEY_JSON][0], {
@@ -39,53 +41,52 @@ class TestHarvesterAsyncClient(TestCase):
         })
         self.assertEqual(taskId, self.TEST_TASK)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_create_capture_task_one_response(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_create_capture_task_one_response(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}]
         ])
-        await self.assertAsyncRaises(Exception, self.client.create_capture_task(self.GODADDY_URL, CountryCode.US))
+        with self.assertRaises(Exception):
+            self.client.create_capture_task(self.GODADDY_URL, CountryCode.US)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_create_capture_task_missing_field(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_create_capture_task_missing_field(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: {}}]
         ])
-        await self.assertAsyncRaises(Exception, self.client.create_capture_task(self.GODADDY_URL, CountryCode.US))
+        with self.assertRaises(Exception):
+            self.client.create_capture_task(self.GODADDY_URL, CountryCode.US)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_get_tasks_success(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_get_tasks_success(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: self.TEST_DICT}]
         ])
-        result = await self.client.get_tasks()
+        result = self.client.get_tasks(finished=True)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
+        self.assertEqual(result, self.TEST_DICT)
+
+    @patch('requests.post')
+    def test_get_tasks_success_finished_false(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
+            [{}, {self.client.KEY_RESULT: self.TEST_DICT}]
+        ])
+        result = self.client.get_tasks(finished=False)
+        self.assertEqual(mock_post.call_count, 1)
+        self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
+        print(mock_post.call_args[1])
         self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
             self.client.KEY_COMMAND: self.client.FIND_TASK_COMMAND
         })
         self.assertEqual(result, self.TEST_DICT)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_get_tasks_success_finished_false(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_get_tasks_success_finished_true(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: self.TEST_DICT}]
         ])
-        result = await self.client.get_tasks(False)
-        self.assertEqual(mock_post.call_count, 1)
-        self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
-        self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
-            self.client.KEY_COMMAND: self.client.FIND_TASK_COMMAND,
-            self.client.KEY_FINISHED: False
-        })
-        self.assertEqual(result, self.TEST_DICT)
-
-    @patch('aiohttp.ClientSession.post')
-    async def test_get_tasks_success_finished_true(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
-            [{}, {self.client.KEY_RESULT: self.TEST_DICT}]
-        ])
-        result = await self.client.get_tasks(True)
+        result = self.client.get_tasks(True)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
         self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
@@ -94,21 +95,22 @@ class TestHarvesterAsyncClient(TestCase):
         })
         self.assertEqual(result, self.TEST_DICT)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_get_tasks_malformed(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_get_tasks_malformed(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {}]
         ])
-        await self.assertAsyncRaises(Exception, self.client.get_tasks())
+        with self.assertRaises(Exception):
+            self.client.get_tasks()
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_delete_task_success(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_delete_task_success(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {
                 self.client.KEY_RESULT: {self.client.KEY_DELETED: True}
             }]
         ])
-        result = await self.client.delete_task(self.TEST_TASK)
+        result = self.client.delete_task(self.TEST_TASK)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
         self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
@@ -117,12 +119,12 @@ class TestHarvesterAsyncClient(TestCase):
         })
         self.assertTrue(result)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_delete_task_failed(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_delete_task_failed(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: {self.client.KEY_DELETED: False}}]
         ])
-        result = await self.client.delete_task(self.TEST_TASK)
+        result = self.client.delete_task(self.TEST_TASK)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
         self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
@@ -131,19 +133,20 @@ class TestHarvesterAsyncClient(TestCase):
         })
         self.assertFalse(result)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_delete_task_malformed(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_delete_task_malformed(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: {}}]
         ])
-        await self.assertAsyncRaises(Exception, self.client.delete_task(self.TEST_TASK))
+        with self.assertRaises(Exception):
+            self.client.delete_task(self.TEST_TASK)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_delete_file_success(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_delete_file_success(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: 'success'}]
         ])
-        result = await self.client.delete_file(self.TEST_FILE_STR)
+        result = self.client.delete_file(self.TEST_FILE_STR)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
         self.assertEqual(mock_post.call_args[1][self.KEY_JSON][0], {
@@ -156,19 +159,19 @@ class TestHarvesterAsyncClient(TestCase):
         })
         self.assertTrue(result)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_delete_file_malformed(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.json = CoroutineMock(side_effect=[
+    @patch('requests.post')
+    def test_delete_file_malformed(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
             [{}, {}]
         ])
-        await self.assertAsyncRaises(Exception, self.client.delete_file(self.TEST_FILE_STR))
+        with self.assertRaises(Exception):
+            self.client.delete_file(self.TEST_FILE_STR)
 
-    @patch('aiohttp.ClientSession.post')
-    async def test_download_file_success(self, mock_post):
-        mock_post.return_value.__aenter__.return_value.read = CoroutineMock(side_effect=[
-            self.client.KEY_DATA
-        ])
-        result = await self.client.download_file(self.TEST_FILE_STR)
+    @patch('requests.post')
+    def test_download_file_success(self, mock_post):
+        mock_post.return_value = MagicMock(spec=Response(), side_effect=[self.client.KEY_DATA])
+        mock_post.return_value.content = self.client.KEY_DATA
+        result = self.client.download_file(self.TEST_FILE_STR)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/getfile/')
         self.assertEqual(mock_post.call_args[1][self.client.KEY_DATA], {
@@ -177,26 +180,26 @@ class TestHarvesterAsyncClient(TestCase):
         })
         self.assertEqual(result, self.client.KEY_DATA)
 
-    async def test_image_from_zip(self):
+    def test_image_from_zip(self):
         with zipfile.ZipFile(self.bytes_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
             z.writestr(self.client.PNG_ARCHIVE_PATH, self.IMAGE_TEST_STR)
         ret_data = self.client.image_from_zip(self.bytes_zip.getvalue())
         self.assertEqual(self.IMAGE_TEST_STR, ret_data.decode())
 
-    async def test_image_from_zip_missing_file(self):
+    def test_image_from_zip_missing_file(self):
         with zipfile.ZipFile(self.bytes_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
             z.writestr('contents/test.txt', self.IMAGE_TEST_STR)
         ret_data = self.client.image_from_zip(self.bytes_zip.getvalue())
         self.assertIsNone(ret_data)
 
-    async def test_html_from_zip(self):
+    def test_html_from_zip(self):
         data = f'{self.client.MHTML_CHUNK_BOUNDARY}{self.client.HTML_CHUNK_BOUNDARY}{self.HTML_TEST_STR}'
         with zipfile.ZipFile(self.bytes_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
             z.writestr(self.client.MHTML_ARCHIVE_PATH, data)
         ret_data = self.client.html_from_zip(self.bytes_zip.getvalue())
         self.assertEqual(ret_data, self.HTML_TEST_STR)
 
-    async def test_html_from_zip_malformed(self):
+    def test_html_from_zip_malformed(self):
         with zipfile.ZipFile(self.bytes_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
             z.writestr(self.client.MHTML_ARCHIVE_PATH, self.HTML_TEST_STR)
         ret_data = self.client.html_from_zip(self.bytes_zip.getvalue())
