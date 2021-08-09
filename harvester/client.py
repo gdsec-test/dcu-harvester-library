@@ -120,14 +120,14 @@ class HarvesterAsyncClient(object):
             raise Exception('Task ID not returned from Harvester task')
         return result_dict.get(self.KEY_TASK_ID)
 
-    def get_tasks(self, finished: bool) -> list:
+    def get_tasks(self, finished: bool = False) -> list:
         """
         Retrieve all Harvester tasks, filtered by finished status if supplied.
         """
         cmd = {
             self.KEY_COMMAND: self.FIND_TASK_COMMAND
         }
-        if finished is not None:
+        if finished:
             cmd[self.KEY_FINISHED] = finished
 
         result = self.__run_api_command(cmd, self._api_token)
