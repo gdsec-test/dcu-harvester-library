@@ -62,12 +62,9 @@ class TestHarvesterAsyncClient(TestCase):
         mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: self.TEST_DICT}]
         ])
-        result = self.client.get_tasks()
+        result = self.client.get_tasks(finished=True)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
-        self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
-            self.client.KEY_COMMAND: self.client.FIND_TASK_COMMAND
-        })
         self.assertEqual(result, self.TEST_DICT)
 
     @patch('requests.post')
@@ -75,12 +72,12 @@ class TestHarvesterAsyncClient(TestCase):
         mock_post.return_value.json = Mock(side_effect=[
             [{}, {self.client.KEY_RESULT: self.TEST_DICT}]
         ])
-        result = self.client.get_tasks(False)
+        result = self.client.get_tasks(finished=False)
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
+        print(mock_post.call_args[1])
         self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
-            self.client.KEY_COMMAND: self.client.FIND_TASK_COMMAND,
-            self.client.KEY_FINISHED: False
+            self.client.KEY_COMMAND: self.client.FIND_TASK_COMMAND
         })
         self.assertEqual(result, self.TEST_DICT)
 
