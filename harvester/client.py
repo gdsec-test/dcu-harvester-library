@@ -20,6 +20,10 @@ class CountryCode(Enum):
     ZA = 'Johannesburg'
     ZAF = 'Johannesburg'
 
+    @classmethod
+    def has_member_key(cls, key):
+        return key in cls.__members__
+
 
 class HarvesterAsyncClient(object):
     """
