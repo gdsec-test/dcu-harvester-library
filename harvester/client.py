@@ -1,5 +1,6 @@
 from enum import Enum
 from io import BytesIO
+from typing import Optional
 from zipfile import ZipFile
 
 import requests
@@ -44,6 +45,7 @@ class HarvesterAsyncClient(object):
     PNG_ARCHIVE_PATH = 'contents/output.png'
     SET_AUTH_COMMAND = 'setauth'
     VISUAL_REQUEST_TYPE = 'visual'
+    ALREADY_DELETED_ERROR = 'KeyError: Did not find any matching records'
 
     # Key definitions.
     KEY_AUTH = 'auth'
@@ -55,6 +57,7 @@ class HarvesterAsyncClient(object):
     KEY_DEST_NAME = 'dest_name'
     KEY_DEST_PATH = 'dest_path'
     KEY_EGRESS = 'egress_tag'
+    KEY_ERROR = 'error'
     KEY_FILE_ID = 'file_id'
     KEY_FINISHED = 'finished'
     KEY_ID = 'id'
@@ -177,12 +180,16 @@ class HarvesterAsyncClient(object):
             self.KEY_FILE_ID: file_id
         }
         result = self.__run_api_command(cmd, self._storage_token)
+
+        if result.get(self.KEY_ERROR, '') == self.ALREADY_DELETED_ERROR:
+            return f'deleted file {file_id}'
+
         result_dict = result.get(self.KEY_RESULT)
         if not result_dict:
             raise Exception(f'Malformed Harvester response when deleting file {file_id}')
         return result_dict
 
-    def image_from_zip(self, ziparchive: bytes) -> bytes:
+    def image_from_zip(self, ziparchive: bytes) -> Optional[bytes]:
         """
         Expects a zip archive in the format created by Harvester. Will extract
         the captured screenshot.
@@ -191,7 +198,7 @@ class HarvesterAsyncClient(object):
             if self.PNG_ARCHIVE_PATH in zip.namelist():
                 return zip.read(self.PNG_ARCHIVE_PATH)
 
-    def html_from_zip(self, ziparchive: bytes) -> str:
+    def html_from_zip(self, ziparchive: bytes) -> Optional[str]:
         """
         Expects a zip archive in the format created by Harvester. Will extract
         the captured mhtml archive and parse out the html file.

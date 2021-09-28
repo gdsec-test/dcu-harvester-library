@@ -160,6 +160,24 @@ class TestHarvesterAsyncClient(TestCase):
         self.assertTrue(result)
 
     @patch('requests.post')
+    def test_delete_file_does_not_exist(self, mock_post):
+        mock_post.return_value.json = Mock(side_effect=[
+            [{}, {self.client.KEY_ERROR: self.client.ALREADY_DELETED_ERROR}]
+        ])
+        result = self.client.delete_file(self.TEST_FILE_STR)
+        self.assertEqual(mock_post.call_count, 1)
+        self.assertEqual(mock_post.call_args[1][self.KEY_URL], f'{self.BASE_URL}/api/')
+        self.assertEqual(mock_post.call_args[1][self.KEY_JSON][0], {
+            self.client.KEY_COMMAND: self.client.SET_AUTH_COMMAND,
+            self.client.KEY_DATA: self.TEST_FILE_AUTH
+        })
+        self.assertEqual(mock_post.call_args[1][self.KEY_JSON][1], {
+            self.client.KEY_COMMAND: self.client.DELETE_FILE_COMMAND,
+            self.client.KEY_FILE_ID: self.TEST_FILE_STR
+        })
+        self.assertEqual(result, f'deleted file {self.TEST_FILE_STR}')
+
+    @patch('requests.post')
     def test_delete_file_malformed(self, mock_post):
         mock_post.return_value.json = Mock(side_effect=[
             [{}, {}]
