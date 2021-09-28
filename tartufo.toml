@@ -4,4 +4,6 @@ exclude-path-patterns = [
     'tartufo.*'
 ]
 exclude-signatures = [
+    'baf67be97b7f5fab83d659ca7219609028fc166b899173821d1ec223785f040e',
+    '649515033e7c2a1021263e7403ea9cb2ff9a6b8cfcedbadcf69e1c2d5fe6a825'
 ]

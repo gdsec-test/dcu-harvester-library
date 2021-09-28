@@ -1,0 +1,18 @@
+From: <Saved by Blink>
+Snapshot-Content-Location: https://test.com
+Subject: Outlook Web App
+Date: Tue, 28 Sep 2021 17:13:22 -0000
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	type="text/html";
+	boundary="----MultipartBoundary--roN2ZDf70xMNnd5PtuVNgI3zwpq3sqKsT35tuTvVKb----"
+
+
+------MultipartBoundary--roN2ZDf70xMNnd5PtuVNgI3zwpq3sqKsT35tuTvVKb----
+Content-Type: text/html
+Content-ID: <frame-2591B9EDE09BBB3E3E28B4673C71EDCF@mhtml.blink>
+Content-Transfer-Encoding: quoted-printable
+Content-Location: https://test.com
+
+test
+------MultipartBoundary--roN2ZDf70xMNnd5PtuVNgI3zwpq3sqKsT35tuTvVKb----

@@ -210,15 +210,16 @@ class TestHarvesterAsyncClient(TestCase):
         ret_data = self.client.image_from_zip(self.bytes_zip.getvalue())
         self.assertIsNone(ret_data)
 
-    def test_html_from_zip(self):
-        data = f'{self.client.MHTML_CHUNK_BOUNDARY}{self.client.HTML_CHUNK_BOUNDARY}{self.HTML_TEST_STR}'
-        with zipfile.ZipFile(self.bytes_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
-            z.writestr(self.client.MHTML_ARCHIVE_PATH, data)
-        ret_data = self.client.html_from_zip(self.bytes_zip.getvalue())
-        self.assertEqual(ret_data, self.HTML_TEST_STR)
-
     def test_html_from_zip_malformed(self):
         with zipfile.ZipFile(self.bytes_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
             z.writestr(self.client.MHTML_ARCHIVE_PATH, self.HTML_TEST_STR)
         ret_data = self.client.html_from_zip(self.bytes_zip.getvalue())
         self.assertIsNone(ret_data)
+
+    def test_mhtml_from_zip(self):
+        with open('tests/output.mhtml', 'r') as f:
+            data = f.read()
+        with zipfile.ZipFile(self.bytes_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
+            z.writestr(self.client.MHTML_ARCHIVE_PATH, data)
+        ret_data = self.client.html_from_zip(self.bytes_zip.getvalue())
+        self.assertEqual(ret_data, 'test')

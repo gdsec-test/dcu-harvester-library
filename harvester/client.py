@@ -1,3 +1,4 @@
+from email.parser import Parser
 from enum import Enum
 from io import BytesIO
 from typing import Optional
@@ -37,10 +38,11 @@ class HarvesterAsyncClient(object):
     DELETE_TASK_COMMAND = 'delete_harvest_task'
     FIND_TASK_COMMAND = 'find_harvest_task'
     HARVEST_TASK_DEST_STR = '<taskid>.<auto-ext>'
-    HTML_CHUNK_BOUNDARY = '\r\n\r\n<!DOCTYPE html>'
     IMAGE_OUTPUT = 'output_image'
     MHTML_ARCHIVE_PATH = 'contents/output.mhtml'
-    MHTML_CHUNK_BOUNDARY = '------MultipartBoundary--'
+    MHTML_CONTENT_LOCATION = 'Content-Location'
+    MHTML_HTML_CONTENT_TYPE = 'text/html'
+    MHTML_ORIGINAL_SOURCE_HEADER = 'Snapshot-Content-Location'
     MIME_HTML_OUTPUT = 'output_mhtml'
     PNG_ARCHIVE_PATH = 'contents/output.png'
     SET_AUTH_COMMAND = 'setauth'
@@ -143,7 +145,7 @@ class HarvesterAsyncClient(object):
             raise Exception('Malformed Harvester response when fetching all tasks')
         return result_dict
 
-    def delete_task(self, task_id: str) -> dict:
+    def delete_task(self, task_id: str) -> bool:
         """
         Delete Harvester Authentic8 task by ID.
         """
@@ -203,11 +205,20 @@ class HarvesterAsyncClient(object):
         Expects a zip archive in the format created by Harvester. Will extract
         the captured mhtml archive and parse out the html file.
         """
-        with ZipFile(BytesIO(ziparchive), 'r') as zip:
-            if self.MHTML_ARCHIVE_PATH in zip.namelist():
-                mhtml = zip.read(self.MHTML_ARCHIVE_PATH).decode('utf-8')
-                mhtml_chunks = mhtml.split(self.MHTML_CHUNK_BOUNDARY)
-                if len(mhtml_chunks) > 1:
-                    html = mhtml_chunks[1].split(self.HTML_CHUNK_BOUNDARY)
-                    if len(html) > 1:
-                        return html[1]
+        try:
+            with ZipFile(BytesIO(ziparchive), 'r') as zip:
+                if self.MHTML_ARCHIVE_PATH in zip.namelist():
+                    mhtml = zip.read(self.MHTML_ARCHIVE_PATH).decode('utf-8')
+                    # MHTML can be parsed like an email - see https://datatracker.ietf.org/doc/html/rfc2557
+                    email = Parser().parsestr(mhtml)
+                    original_source = email.get(self.MHTML_ORIGINAL_SOURCE_HEADER)
+                    # Find the portion of the email which has a content type of HTML(ignoring CSS for example). The
+                    # content location should match the one that triggered this capture in the first place.
+                    for portion in email.get_payload():
+                        if portion.get_content_type() == self.MHTML_HTML_CONTENT_TYPE:
+                            if portion.get(self.MHTML_CONTENT_LOCATION) == original_source:
+                                return portion.get_payload()
+        except Exception:
+            # Not a huge fan of surpression these, but we don't have a ton of options. The missing HTML will trigger
+            # the needed investigation.
+            pass
