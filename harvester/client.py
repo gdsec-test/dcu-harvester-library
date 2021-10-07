@@ -10,8 +10,8 @@ import requests
 class CountryCode(Enum):
     AE = 'Dubai'
     ARE = 'Dubai'
-    BR = 'São Paulo'
-    BRA = 'São Paulo'
+    BR = 'Sao Paulo'
+    BRA = 'Sao Paulo'
     DE = 'Frankfurt'
     DEU = 'Frankfurt'
     SG = 'Singapore'
