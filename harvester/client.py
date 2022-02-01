@@ -33,6 +33,7 @@ class HarvesterAsyncClient(object):
     """
     # Harvester will replace these values with the information derived from
     # the submitted task.
+    HUNDRED_MB_CHUNK_SIZE = 1024 * 1024 * 100
     CREATE_TASK_COMMAND = 'create_harvest_task'
     DELETE_FILE_COMMAND = 'deletefile'
     DELETE_TASK_COMMAND = 'delete_harvest_task'
@@ -171,6 +172,27 @@ class HarvesterAsyncClient(object):
         response = requests.post(url=self._getfile_url, data=params)
         response.raise_for_status()
         return response.content
+
+    def save_file_to_disk(self, file_id: str, file_dst: str, chunk_size: int = None) -> None:
+        """
+        Requires the S3 file ID of the file stored in the Authentic8 permenant
+        storage pool. Saves the resulting file to the disk location the caller
+        specified.
+        """
+        params = {
+            self.KEY_ID: file_id,
+            self.KEY_AUTH: self._storage_token
+        }
+
+        if not chunk_size:
+            chunk_size = self.HUNDRED_MB_CHUNK_SIZE
+
+        # Stream the download to ensure we don't need to hold the whole file in memory at once.
+        with requests.post(url=self._getfile_url, data=params, stream=True) as response:
+            response.raise_for_status()
+            with open(file_dst, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    f.write(chunk)
 
     def delete_file(self, file_id: str) -> str:
         """
