@@ -71,6 +71,7 @@ class HarvesterAsyncClient(object):
     KEY_TASK_PARAMS = 'task_params'
     KEY_URLS = 'urls'
     KEY_VIS_PARAMS = 'vis_params'
+    KEY_NOTES = 'notes'
 
     def __init__(self, token: str, storage_token: str, s3_bucket: str, path: str, url: str) -> None:
         super().__init__()
@@ -100,7 +101,7 @@ class HarvesterAsyncClient(object):
             raise Exception(f'Did not receive two response objects for Harvester Task {data}')
         return data[1]
 
-    def create_capture_task(self, url: str, proxy: CountryCode, image=True, html=True) -> str:
+    def create_capture_task(self, url: str, proxy: CountryCode, image=True, html=True, note: Optional[str] = None) -> str:  # noqa: E501
         """
         Attempt to run a Harvester Authentic8 capture task against the
         supplied URL, via the specified proxy location. Optionally specify if
@@ -124,6 +125,11 @@ class HarvesterAsyncClient(object):
             cmd[self.KEY_TASK_PARAMS][self.KEY_VIS_PARAMS].append({self.KEY_NAME: self.IMAGE_OUTPUT})
         if html:
             cmd[self.KEY_TASK_PARAMS][self.KEY_VIS_PARAMS].append({self.KEY_NAME: self.MIME_HTML_OUTPUT})
+
+        if note:
+            for x in cmd[self.KEY_TASK_PARAMS][self.KEY_VIS_PARAMS]:
+                x[self.KEY_NOTES] = note
+
         result = self.__run_api_command(cmd, self._api_token)
         result_dict = result.get(self.KEY_RESULT)
         if not result_dict or not result_dict.get(self.KEY_TASK_ID):
