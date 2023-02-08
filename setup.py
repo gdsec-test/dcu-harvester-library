@@ -12,7 +12,7 @@ with open('README.md') as f:
 
 setup(
     name='dcu-harvester-library',
-    version='2.3.0',
+    version='2.4.0',
     author='DCU',
     author_email='dcueng@godaddy.com',
     description='Python library to dispatch/retrieve/status Harvester downloads.',
@@ -23,6 +23,6 @@ setup(
     tests_require=testing_reqs,
     test_suite='nose.collector',
     classifiers=[
-        'Programming Language :: Python :: 3.7'
+        'Programming Language :: Python :: 3.11.1'
     ]
 )

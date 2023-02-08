@@ -4,7 +4,6 @@ coverage.xml
 .venv
 .noseids
 .idea/*
-.vscode/*
 .envrc
 *.png
 *.ipynb

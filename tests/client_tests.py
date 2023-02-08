@@ -3,8 +3,6 @@ from io import BytesIO
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch
 
-from requests import Response
-
 from harvester import CountryCode, HarvesterAsyncClient
 
 
@@ -187,7 +185,7 @@ class TestHarvesterAsyncClient(TestCase):
 
     @patch('requests.post')
     def test_download_file_success(self, mock_post):
-        mock_post.return_value = MagicMock(spec=Response(), side_effect=[self.client.KEY_DATA])
+        mock_post.return_value = MagicMock(side_effect=[self.client.KEY_DATA])
         mock_post.return_value.content = self.client.KEY_DATA
         result = self.client.download_file(self.TEST_FILE_STR)
         self.assertEqual(mock_post.call_count, 1)

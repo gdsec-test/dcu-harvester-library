@@ -20,9 +20,11 @@ tools: flake8 isort
 .PHONY: test
 test: tools
 	@echo "----- Running tests -----"
-	nosetests tests
+	python -m unittest discover tests "*_tests.py"
 
 .PHONY: testcov
 testcov:
 	@echo "----- Running tests with coverage -----"
-	nosetests tests --with-coverage --cover-erase --cover-package=harvester --cover-xml
+	@coverage run --source=harvester -m unittest discover tests "*_tests.py"
+	@coverage xml
+	@coverage report
