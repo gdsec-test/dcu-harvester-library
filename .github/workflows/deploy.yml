@@ -3,8 +3,7 @@ on:
   workflow_dispatch:
 jobs:
   pip:
-    needs: scale-out-runner
-    runs-on: [ec2ubuntu]
+    runs-on: [csetubuntu]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
