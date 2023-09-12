@@ -81,7 +81,7 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt-get update
-          sudo apt-get install gcc libffi-dev -y        
+          sudo apt-get install gcc libffi-dev -y
           make init
 
       - name: Run unit tests
