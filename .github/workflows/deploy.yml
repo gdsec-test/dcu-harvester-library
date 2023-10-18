@@ -5,8 +5,8 @@ jobs:
   pip:
     runs-on: [csetubuntu]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+      - uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
         with:
           python-version: 3.7.10
           architecture: 'x64'
@@ -18,7 +18,7 @@ jobs:
           echo "::set-output name=pat-cloud::${PAT}"
           echo "::add-mask::$PAT"
       - name: Checkout DCU actions
-        uses: actions/checkout@v2
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
         with:
           repository: gdcorp-infosec/dcu-actions
           token: ${{ steps.secrets.outputs.pat-cloud }}
