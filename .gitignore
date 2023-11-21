@@ -6,4 +6,3 @@ coverage.xml
 .idea/*
 .envrc
 *.png
-*.ipynb
